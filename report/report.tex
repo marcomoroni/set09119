@@ -1,0 +1,160 @@
+% #######################################
+% ########### FILL THESE IN #############
+% #######################################
+\def\mytitle{Coursework Report}
+\def\mykeywords{Physics-Based Animation, gravity, Super Mario Galaxy}
+\def\myauthor{Marco Moroni}
+\def\contact{40213873@napier.ac.uk}
+\def\mymodule{Physics-Based Animation (SET09119)}
+% #######################################
+% #### YOU DON'T NEED TO TOUCH BELOW ####
+% #######################################
+\documentclass[10pt, a4paper]{article}
+\usepackage[a4paper,outer=1.5cm,inner=1.5cm,top=1.75cm,bottom=1.5cm]{geometry}
+\twocolumn
+\usepackage{graphicx}
+\graphicspath{{./images/}}
+%colour our links, remove weird boxes
+\usepackage[colorlinks,linkcolor={black},citecolor={blue!80!black},urlcolor={blue!80!black}]{hyperref}
+%Stop indentation on new paragraphs
+\usepackage[parfill]{parskip}
+%% Arial-like font
+\IfFileExists{uarial.sty}
+{
+    \usepackage[english]{babel}
+    \usepackage[T1]{fontenc}
+    \usepackage{uarial}
+    \renewcommand{\familydefault}{\sfdefault}
+}{
+    \GenericError{}{Couldn't find Arial font}{ you may need to install 'nonfree' fonts on your system}{}
+    \usepackage{lmodern}
+    \renewcommand*\familydefault{\sfdefault}
+}
+%Napier logo top right
+\usepackage{watermark}
+%Lorem Ipusm dolor please don't leave any in you final report ;)
+\usepackage{lipsum}
+\usepackage{xcolor}
+\usepackage{listings}
+%give us the Capital H that we all know and love
+\usepackage{float}
+%tone down the line spacing after section titles
+\usepackage{titlesec}
+%Cool maths printing
+\usepackage{amsmath}
+%PseudoCode
+\usepackage{algorithm2e}
+
+\titlespacing{\subsection}{0pt}{\parskip}{-3pt}
+\titlespacing{\subsubsection}{0pt}{\parskip}{-\parskip}
+\titlespacing{\paragraph}{0pt}{\parskip}{\parskip}
+\newcommand{\figuremacro}[5]{
+    \begin{figure}[#1]
+        \centering
+        \includegraphics[width=#5\columnwidth]{#2}
+        \caption[#3]{\textbf{#3}#4}
+        \label{fig:#2}
+    \end{figure}
+}
+
+\lstset{
+	escapeinside={/*@}{@*/}, language=C++,
+	basicstyle=\fontsize{8.5}{12}\selectfont,
+	numbers=left,numbersep=2pt,xleftmargin=2pt,frame=tb,
+    columns=fullflexible,showstringspaces=false,tabsize=4,
+    keepspaces=true,showtabs=false,showspaces=false,
+    backgroundcolor=\color{white}, morekeywords={inline,public,
+    class,private,protected,struct},captionpos=t,lineskip=-0.4em,
+	aboveskip=10pt, extendedchars=true, breaklines=true,
+	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+	keywordstyle=\color[rgb]{0,0,1},
+	commentstyle=\color[rgb]{0.133,0.545,0.133},
+	stringstyle=\color[rgb]{0.627,0.126,0.941}
+}
+
+\thiswatermark{\centering \put(336.5,-38.0){\includegraphics[scale=0.8]{logo}} }
+\title{\mytitle}
+\author{\myauthor\hspace{1em}\\\contact\\Edinburgh Napier University\hspace{0.5em}-\hspace{0.5em}\mymodule}
+\date{}
+\hypersetup{pdfauthor=\myauthor,pdftitle=\mytitle,pdfkeywords=\mykeywords}
+\sloppy
+% #######################################
+% ########### START FROM HERE ###########
+% #######################################
+\begin{document}
+    \maketitle
+    \begin{abstract}
+        This coursework presents three types of gravity that are implemented in a physics-based simulation.
+    \end{abstract}
+    
+    \textbf{Keywords -- }{\mykeywords}
+    
+    \section{Introduction}
+    The aim of this coursework is to explore different ways to implement gravity in a physics-based simulation:
+    \begin{itemize}
+    	\item point gravity;
+    	\item Newton's gravity (gravity between any body with mass);
+    	\item \textit{Super Mario Galaxy}'s gravity, a video game where the player can walk on planetoids of any shape.
+    \end{itemize}
+    
+    \section{Implementation}
+    The starting project comes with a force \texttt{Gravity} towards the ground. This has been replaced with new forces for each gravity type.
+    
+    \subsection{Point gravity}
+    \figuremacro{h}{point01}{Point gravity}{ - The particles are affected by two gravity points (grey)}{1.0}
+    Point gravity simplifies how bodies experience gravity on the surface of a planet: a body is pushed towards the "centre" of the planet, and it will be pushed with different intesities depending on the distance to it (the more the proximity the centre, the stronger the gravity is).\\
+    A force \texttt{pointG} that wants to simulate that needs to have:
+    \begin{itemize}
+    	\item a position \texttt{c}, which represents the point where the gravitational accelleration is at its maximum;
+    	\item a value \texttt{g} for the gravitational accelleration;
+    	\item a radius \texttt{r}.
+    \end{itemize}
+	With these elements a sphere can be created. A body \texttt{body} can be either:
+	\begin{itemize}
+		\item inside such sphere. In this case the force applied to the body is made by the following:
+		\begin{itemize}
+			\item direction: the normalised vector of \texttt{pointG.c - body.c}
+			\item scalar value: the distance \texttt{d} between \texttt{pointG.c} and \texttt{body.c} multiplied by a number between \texttt{0} (if the distance is more or equal to the radius) and \texttt{1} (if the body is at the centre of the sphere). This number is calculated by doing \texttt{1 - (d / r)}
+		\end{itemize}
+		\item outside such sphere, in which case the force is \texttt{vec3(0.0f)}.
+	\end{itemize}
+	In this simulation (and the following) the body is a particle, therfore the body is considered inside the sphere when the distance between it and the centre is less or equal than the radius. Every particle has a force for each gravitational point applied.
+    
+    \subsection{Newton's gravity}
+    This type of gravity is between any two bodies and it depends on their masses, the distance between them and a gravitational constant: $F = G \frac{m_1 m_2}{r^2}$.
+    A force \texttt{newtonG} needs to know:
+    \begin{itemize}
+    	\item the first body \texttt{b1} (or the body to which the force is added);
+    	\item the second body \texttt{b2};
+    	\item a gravitational constant \texttt{g}, which will probably be different from the real one.
+    \end{itemize}
+	Newton's law of gravity is the same for both bodies (one is reversed). This useful information is unfortunately not used, because \texttt{newtonG} returns only the force to its corresponding particle.\\
+	Although the formula is easy to implement, it would be diffucult to see the intractions between the particles in the simulation because particles near each other can be pushed far away very quickly. The following adjustments have been made:
+	\begin{itemize}
+		\item the particles are set inside a box;
+		\item the velocity cannot be higher than a certain amount;
+		\item when two particles are very close to each other, \texttt{newtonG} is \texttt{vec3(0.0f)}. By doing so the particles will seem to form a conglomerate because they don't have enough force to "leave" a particle with a higher mass, which makes easier for the user to see the forces effects.
+	\end{itemize}
+    
+    \subsection{\textit{Super Mario Galaxy}'s gravity}
+    \figuremacro{h}{smg01}{\textit{Super Mario Galaxy}'s gravity}{ - The gravity pushes particles towards the grey box.}{1.0}
+    In the video game \textit{Super Mario Galaxy} the player can walk of planetoids of any shape, and this means all previous gravity types cannot be used. Instead, the gravity direction should be the inverse of the normal of the surface below the player. Usually this surface is the one closest to the player. The gravity is the same no matter the distance from the ground and a body is affected by only one gravity force at a time.\\
+    The force is calculated in the following way:
+    \begin{enumerate}
+    	\item The closest point \texttt{q} to the the body on (or in) the planetoid is calculated \cite{Ericson} (see the red particle with the corresponding \texttt{q} point in fig. 2);
+    	\item The force direction is the normalised vector \texttt{q - body.c}. The non-normalised vector is the closest distance between the body and the planetoid, and normalised vector corresponds to the normal of the planetoid's surface;
+    	\item The force (direction multiplied by a constant) is returned.
+    \end{enumerate}
+	By using the closest point method in step 1, the force will always have the correct direction, even if \texttt{q} is on an edge or a vertex of the planetoid.
+    
+    \section{Future work}
+    The simulations could be more interesting if instead of particles, spheres (with collisions between them) were used.
+    
+    \section{Conclusion}
+    Gravity can be implemented in many different ways, and depending on the goal, some of the foramlae used can be completely different from the classical physics ones.
+    
+    
+\bibliographystyle{ieeetr}
+\bibliography{references}
+		
+\end{document}
